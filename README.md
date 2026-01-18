@@ -33,6 +33,6 @@ Clone the repository:
 ```bash
 git clone https://github.com/yourusername/tinytorch.git
 cd tinytorch
-
+```
 
 pip install -e .
