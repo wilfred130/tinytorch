@@ -37,6 +37,7 @@ cd tinytorch
 
 ## Project Structure
 
+```bash
 tinytorch/
 │
 ├── core/
@@ -55,6 +56,8 @@ tinytorch/
 ├── tests/
 ├── README.md
 └── setup.py
+
+```
 
 ## Core modules
 
