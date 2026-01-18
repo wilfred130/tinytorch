@@ -24,14 +24,6 @@ class Layer:
         return f'{self.__class__.__name__}()'
 
 
-class BaseLayer(Layer):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def forward(self, x, training=True):
-        raise NotImplementedError('Subclass must implement forward()')
-
-
 class Linear(Layer):
 
     def __init__(self, in_features, out_features, bias=True) -> None:
@@ -40,11 +32,11 @@ class Linear(Layer):
         self.out_features = out_features
         scale = np.sqrt(XAVIER_SCALE_FACTOR / in_features)
         weights_data = np.random.randn(in_features, out_features) * scale
-        self.weight = Tensor(weights_data, requires_grad=True)
+        self.weight = Tensor(weights_data, requires_grad=True)  # type: ignore
 
         if bias:
             bias_data = np.zeros(out_features)
-            self.bias = Tensor(bias_data, requires_grad=True)
+            self.bias = Tensor(bias_data, requires_grad=True)  # type: ignore
         else:
             self.bias = None
 
@@ -66,7 +58,7 @@ class Linear(Layer):
             out_features= {self.out_features.shape}{bias_str})'
 
 
-class Dropout(BaseLayer):
+class Dropout(Layer):
     def __init__(self, p=0.5) -> None:
         super().__init__()
         if not MIN_DROPOUT_PROB <= p <= MAX_DROPOUT_PROB:

@@ -2,18 +2,17 @@ import numpy as np
 
 
 class Tensor:
-    def __init__(self, data, requires_grad=False):
+    def __init__(self, data):
         self.data = np.array(data, dtype=np.float32)
         self.size = self.data.size
         self.shape = self.data.shape
         self.dtype = self.data.dtype
-        self.requires_grad = requires_grad
 
     def __repr__(self):
         return f'Tensor(data= {self.data}, shape= {self.shape})'
 
     def __str__(self):
-        return f'Tensor(data= {self.data})'
+        return f'Tensor({self.data})'
 
     def numpy(self):
         return self.data
@@ -88,6 +87,12 @@ class Tensor:
             axes[dim0], axes[dim1] = axes[dim1], axes[dim0]
             transposed_data = np.transpose(self.data, axes)
         return Tensor(transposed_data)
+
+    def __getitem__(self, key):
+        result_data = self.data[key]
+        if not isinstance(result_data, np.ndarray):
+            result_data = np.array(result_data)
+        return Tensor(result_data)
 
     def reshape(self, *shape):
         if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
