@@ -115,7 +115,7 @@ from tinytorch.core.activations import ReLU
 relu = ReLU()
 output = relu(x)
 
-``
+```
 
 ```bash
 tinytorch.core.layers
@@ -133,8 +133,10 @@ from tinytorch.core.layers import Linear
 
 layer = Linear(in_features=3, out_features=2)
 output = layer(x)
+
 ```
-``bash
+
+```bash
 tinytorch.core.losses
 ```
 
@@ -155,7 +157,7 @@ loss = loss_fn(predictions, targets)
 ```
 ```bash
 tinytorch.core.optimizers
-``
+```
 Supported optimizers:
 
 SGD
