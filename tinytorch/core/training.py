@@ -5,6 +5,7 @@ import pickle
 from pathlib import Path
 import time
 import sys
+from pathlib import Path
 
 from tinytorch.core.tensor import Tensor
 from tinytorch.core.layers import Linear
@@ -44,7 +45,7 @@ def clip_grad_norm(parameters: List, max_norm: float = 1.0) -> float:
 
     total_norm = 0.0
     for param in parameters:
-        if param is not None:
+        if param.grad is not None:
             grad = param.grad
 
             if isinstance(grad, np.ndarray):
@@ -92,7 +93,7 @@ class Trainer:
             "learning_rates": []
         }
 
-    def train_epoch(self, dataloader, accumulation_steps):
+    def train_epoch(self, dataloader, accumulation_steps=1):
         """
         Train model for  one epoch
 
@@ -191,3 +192,102 @@ class Trainer:
 
         self.history['eval_loss'].append(avg_loss)
         return avg_loss, accuracy
+
+    def save_checkpoints(self, path: str):
+        """
+        Saves entire model state for resumption
+
+        Args:
+            path: File path to store model state
+        """
+
+        checkpoints = {
+            'epoch': self.epoch,
+            'step': self.step,
+            'history': self.history,
+            'training_mode': self.training_mode,
+            'model_state': self._get_model_state(),
+            'optimizer_state': self._get_optimizer_state(),
+            'scheduler_state': self._get_scheduler_state()
+        }
+
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        with open(path, 'wb') as f:
+            pickle.dump(checkpoints, f)
+
+    def _get_model_state(self):
+        """Extracts model paremters for checkpointing"""
+        return {i: param.data.copy() for i, param in enumerate(self.model.parameters())}
+
+    def _get_optimizer_state(self):
+        """Extracts optimizer state for checkpointng"""
+
+        state = {}
+        state['lr'] = self.optimizer.lr
+
+        if hasattr(self.optimizer, 'has_momentum') and self.optimizer.has_momentum():
+            momentum_state = self.optimizer.get_momentum_state()
+            if momentum_state is not None:
+                state['momentum_buffer'] = momentum_state
+        return state
+
+    def _get_scheduler_state(self):
+        """Extracts scheduler state"""
+
+        if self.scheduler is None:
+            return None
+        return {
+            'max_lr': getattr(self.scheduler, 'max_lr', None),
+            'min_lr': getattr(self.scheduler, 'min_lr', None),
+            'total_epochs': getattr(self.scheduler, 'total_epochs', None)
+        }
+
+    def load_checkpoint(self, path: str):
+        """
+        Load training state from checkpoints
+
+        Args:
+            path: File path to load checkpoints from 
+        """
+
+        with open(path, 'rb') as f:
+            checkpoints = pickle.load(f)
+
+        self.epoch = checkpoints['epoch']
+        self.step = checkpoints['step']
+        self.history = checkpoints['history']
+        self.training_mode = checkpoints['training_mode']
+
+        if 'model_state' in checkpoints:
+            self._set_model_state(checkpoints['model_state'])
+
+        if 'optimizer_state' in checkpoints:
+            self._set_optimizer_state(checkpoints['optimizer_state'])
+
+        if 'scheduler_state' in checkpoints:
+            self._set_scheduler_state(checkpoints['scheduler_state'])
+
+    def _set_model_state(self, state):
+        """Restores model parameters from checkpointing"""
+
+        for i, param in enumerate(self.model.parameters()):
+            if i in state:
+                param.data = state[i].copy()
+
+    def _set_optimizer_state(self, state):
+        """Restores optimizer state from checkpointing"""
+
+        if 'lr' in state:
+            self.optimizer.lr = state['lr']
+
+        if getattr(self.optimizer, 'has_momentum') and self.optimizer.has_momentum():
+            self.optimizer.set_momentum_state(state['momentum_buffer'])
+
+    def _set_scheduler_state(self, state):
+        """Restores scheduler state from checkpointing"""
+        if state is None or self.scheduler is None:
+            return None
+
+        for key, value in state.items():
+            if hasattr(self.scheduler, key):
+                setattr(self.optimizer, key, value)

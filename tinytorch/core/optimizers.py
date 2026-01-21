@@ -59,7 +59,7 @@ class SGD(Optimizer):
         if not self.has_momentum():
             return
 
-        return [buf.copy if buf is not None else None for buf in self.momentum_buffer]
+        return [buf.copy() if buf is not None else None for buf in self.momentum_buffer]
 
     def set_momentum_state(self, state: Optional[List]) -> None:
         """Restore momentum buffer for checkpointing"""
